@@ -18,6 +18,12 @@ let isDead = false;
 let killedEnemies = 0;
 let kickDuration = 15;
 
+// Инициализация звуков
+const deathSound = new Audio('./minecraft_death.mp3');
+const jumpSound = new Audio('./inoplanetnyiy-pryijok.mp3');
+const killSound = new Audio('./udar-nogoy-po-derevyannomu-zaboru.mp3');
+let audioEnabled = false;
+
 class Character {
     constructor(x, y) {
         this.x = x;
@@ -155,7 +161,6 @@ class Character {
     checkKickCollision(enemy) {
         if (!this.kickSide) return false;
         
-        // Исправленный тернарный оператор
         const kickX = this.kickSide === 'left' 
             ? this.x - this.kickLength 
             : this.x + this.width;
@@ -293,6 +298,17 @@ function setup() {
     bird = new Bird(random(width), random(50, 200));
     canyons.push(new Canyon(200, 150));
     canyons.push(new Canyon(700, 100));
+    
+    // Активация звуков при первом клике
+    const activateAudio = () => {
+        if (!audioEnabled) {
+            jumpSound.play().then(() => {
+                jumpSound.pause();
+                audioEnabled = true;
+            });
+        }
+    };
+    document.addEventListener('click', activateAudio, {once: true});
 }
 
 function draw() {
@@ -331,9 +347,19 @@ function draw() {
         if (character.checkKickCollision(enemies[i])) {
             enemies[i].alive = false;
             killedEnemies++;
+            if (audioEnabled) {
+                killSound.currentTime = 0;
+                killSound.play();
+            }
         } 
         else if (enemies[i].checkCollision(character)) {
-            isDead = true;
+            if (!isDead) {
+                isDead = true;
+                if (audioEnabled) {
+                    deathSound.currentTime = 0;
+                    deathSound.play();
+                }
+            }
         }
         
         if (enemies[i].x < -100 || enemies[i].x > width + 100) {
@@ -396,6 +422,10 @@ function keyPressed() {
     if (keyCode === 32 && !isJumping) {
         isJumping = true;
         jumpSpeed = jumpPower;
+        if (audioEnabled) {
+            jumpSound.currentTime = 0;
+            jumpSound.play();
+        }
     }
     if (keyCode === 70) bird.isFalling = true;
     if (keyCode === 75) character.kick('left');
